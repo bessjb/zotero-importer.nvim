@@ -1,0 +1,27 @@
+\documentclass{article}
+
+% Load the biblatex package
+\usepackage[style=authoryear-icomp, autocite=inline]{biblatex}
+
+% Specify the bibliography file
+\addbibresource{references.bib}
+
+\begin{document}
+
+\title{Sample Document with Autocite}
+\author{Your Name}
+\date{\today}
+\maketitle
+
+\section{Introduction}
+
+This is a sample document that includes an example of how to use an \texttt{autocite} command. Let’s include a citation for a book: \autocite{doeTestJournal2024}.
+
+\section{Conclusion}
+
+We cited a book on LaTeX by Leslie Lamport as our example.
+
+% Print the bibliography
+\printbibliography
+
+\end{document}
