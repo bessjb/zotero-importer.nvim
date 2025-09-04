@@ -17,6 +17,13 @@ M.connect = function(opts)
   M.db = connect(opts.zotero_db_path)
   M.bbt = connect(opts.better_bibtex_db_path)
   if M.db == nil or M.bbt == nil then
+    if M.db == nil then
+      print("zotero")
+    end
+    if M.bbt == nil then
+      print("bbt")
+    end
+
     return false
   end
   return true
