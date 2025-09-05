@@ -13,17 +13,49 @@ local parsers = require("nvim-treesitter.parsers")
 local M = {}
 M.references = {}
 
+local function find_text_extension(path, files)
+  files = files or {}
+  local handle = vim.loop.fs_scandir(path)
+  if handle then
+    while true do
+      local entry = vim.loop.fs_scandir_next(handle)
+      if not entry then break end
+      local fullpath = path .. "/" .. entry
+      if vim.fn.isdirectory(fullpath) == 1 then
+        find_text_extension(fullpath, files)
+      else
+        local ext = vim.fn.fnamemodify(fullpath, ":e")
+        if ext == "bib" then
+          table.insert(files, fullpath)
+        end
+      end
+    end
+  end
+  return files
+end
+
+local get_bib_file = function()
+  local cwd = vim.fn.getcwd()
+  -- print(cwd)
+  local bibfiles = find_text_extension(cwd)
+  if #bibfiles > 0 then
+    return bibfiles[1]
+  else
+    return nil
+  end
+end
+
 local default_opts = {
-  zotero_db_path = '/root/Zotero/zotero.sqlite',
-  better_bibtex_db_path = '/root/Zotero/better-bibtex.sqlite',
+  zotero_db_path = '~/Zotero/zotero.sqlite',
+  better_bibtex_db_path = '~/Zotero/better-bibtex.sqlite',
   zotero_storage_path = '~/Zotero/storage',
   pdf_opener = nil,
   ft = {
     tex = {
       insert_key_formatter = function(citekey)
-        return '\\cite{' .. citekey .. '}'
+        return '\\autocite{' .. citekey .. '}'
       end,
-      locate_bib = "./bib.bib",
+      locate_bib = get_bib_file,
     }
   }
 }
@@ -164,7 +196,9 @@ M.update_bibliography = function()
 
   for index, key in ipairs(citekeys) do
     local entry = M.get_entry_from_citekey(key)
-    M.add_to_bib(entry, ft_options.locate_bib)
+    if next(entry) ~= nil then
+      M.add_to_bib(entry, ft_options.locate_bib)
+    end
   end
 end
 
@@ -221,7 +255,7 @@ local function make_entry(pre_entry)
   local author = creators[1] or {}
   local last_name = author.lastName or 'NA'
   local year = pre_entry.year or pre_entry.date or 'NA'
-  year = extract_year(year)
+  -- year = extract_year(year)
   pre_entry.year = year
 
   local options = get_attachment_options(pre_entry)

@@ -118,10 +118,22 @@ M.locate_org_bib = function()
   return "references.bib"
 end
 
+local function extract_year(date)
+  local year = date:match '(%d%d%d%d)'
+  if year ~= nil then
+    return year
+  else
+    return 'NA'
+  end
+end
+
 M.entry_to_bib_entry = function(entry)
   local bib_entry = '@'
   local item = entry.value
   local citekey = item.citekey or ''
+  local year = item.year or item.date or 'NA'
+  year = extract_year(year)
+  item.date = year
   bib_entry = bib_entry .. (item.itemType or '') .. '{' .. citekey .. ',\n'
   for k, v in pairs(item) do
     if k == 'creators' then
