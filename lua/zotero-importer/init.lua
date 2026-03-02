@@ -73,7 +73,7 @@ end
 M.get_entry_from_citekey = function(citekey)
   local return_entry = {}
   for key, item in pairs(M.references) do
-    if item.citekey == citekey then
+    if item.citationKey == citekey then
       return_entry["value"] = item
     end
   end
@@ -144,7 +144,7 @@ end
 
 local insert_entry = function(entry, insert_key_fn, locate_bib_fn)
   -- Insert selected citation in file
-  local citekey = entry.value.citekey
+  local citekey = entry.value.citationKey
   local insert_key = insert_key_fn(citekey)
   vim.api.nvim_put({ insert_key }, '', false, true)
 

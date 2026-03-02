@@ -130,7 +130,7 @@ end
 M.entry_to_bib_entry = function(entry)
   local bib_entry = '@'
   local item = entry.value
-  local citekey = item.citekey or ''
+  local citekey = item.citationKey or ''
   local year = item.year or item.date or 'NA'
   year = extract_year(year)
   item.date = year
@@ -145,7 +145,7 @@ M.entry_to_bib_entry = function(entry)
       -- remove trailing ' and '
       author = string.sub(author, 1, -6)
       bib_entry = bib_entry .. author .. '},\n'
-    elseif k ~= 'citekey' and k ~= 'itemType' and k ~= 'attachment' and type(v) == 'string' then
+    elseif k ~= 'citationKey' and k ~= 'itemType' and k ~= 'attachment' and type(v) == 'string' then
       bib_entry = bib_entry .. '  ' .. k .. ' = {' .. v .. '},\n'
     end
   end

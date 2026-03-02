@@ -15,15 +15,8 @@ end
 
 M.connect = function(opts)
   M.db = connect(opts.zotero_db_path)
-  M.bbt = connect(opts.better_bibtex_db_path)
-  if M.db == nil or M.bbt == nil then
-    if M.db == nil then
-      print("zotero")
-    end
-    if M.bbt == nil then
-      print("bbt")
-    end
-
+  if M.db == nil then
+    print("zotero")
     return false
   end
   return true
@@ -77,15 +70,10 @@ function M.get_items()
   local raw_items = {}
   local sql_items = M.db:eval(query_items)
   local sql_creators = M.db:eval(query_creators)
-  local sql_bbt = M.bbt:eval(query_bbt)
 
-  if sql_items == nil or sql_creators == nil or sql_bbt == nil then
+  if sql_items == nil or sql_creators == nil then
     vim.notify_once('[zotero] could not query database.', vim.log.levels.WARN, {})
     return {}
-  end
-  local bbt_citekeys = {}
-  for _, v in pairs(sql_bbt) do
-    bbt_citekeys[v.itemKey] = v.citationKey
   end
 
   for _, v in pairs(sql_items) do
@@ -112,11 +100,7 @@ function M.get_items()
   end
 
   for key, item in pairs(raw_items) do
-    local citekey = bbt_citekeys[key]
-    if citekey ~= nil then
-      item.citekey = citekey
-      table.insert(items, item)
-    end
+    table.insert(items, item)
   end
   return items
 end
