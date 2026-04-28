@@ -45,6 +45,10 @@ local get_bib_file = function()
   end
 end
 
+local function insert_key_formatter(citekey)
+  return '\\autocite{' .. citekey .. '}'
+end
+
 local default_opts = {
   zotero_db_path = '~/Zotero/zotero.sqlite',
   better_bibtex_db_path = '~/Zotero/better-bibtex.sqlite',
@@ -52,9 +56,11 @@ local default_opts = {
   pdf_opener = nil,
   ft = {
     tex = {
-      insert_key_formatter = function(citekey)
-        return '\\autocite{' .. citekey .. '}'
-      end,
+      insert_key_formatter = insert_key_formatter,
+      locate_bib = get_bib_file,
+    },
+    plaintex = {
+      insert_key_formatter = insert_key_formatter,
       locate_bib = get_bib_file,
     }
   }
@@ -129,8 +135,7 @@ M.add_to_bib = function(entry, locate_bib_fn)
       return
     end
   end
-
-  -- Otherwise, append the entry to the bib file at bib_path
+-- Otherwise, append the entry to the bib file at bib_path
   local bib_entry = bib.entry_to_bib_entry(entry)
   local file = io.open(bib_path, 'a')
   if file == nil then
