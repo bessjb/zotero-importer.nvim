@@ -16,7 +16,6 @@ end
 M.connect = function(opts)
   M.db = connect(opts.zotero_db_path)
   if M.db == nil then
-    print("zotero")
     return false
   end
   return true
@@ -39,7 +38,8 @@ local query_items = [[
       itemAttachments.contentType AS attachment_content_type,
       itemAttachments.linkMode AS attachment_link_mode,
       -- Fetch the folder name from the itemAttachments table
-      SUBSTR(itemAttachments.path, INSTR(itemAttachments.path, ':') + 1) AS folder_name
+      SUBSTR(itemAttachments.path, INSTR(itemAttachments.path, ':') + 1) AS folder_name,
+      citationkey.citationKey AS citationKey
     FROM
       items
       INNER JOIN itemData ON itemData.itemID = items.itemID
@@ -49,6 +49,7 @@ local query_items = [[
       INNER JOIN fields ON fields.fieldID = parentItemData.fieldID
       INNER JOIN itemTypes ON itemTypes.itemTypeID = items.itemTypeID
       LEFT JOIN itemAttachments ON items.itemID = itemAttachments.parentItemID AND itemAttachments.contentType = 'application/pdf'
+      LEFT JOIN citationkey ON items.itemID = citationkey.itemID
 ]]
 local query_creators = [[
     SELECT
@@ -82,6 +83,9 @@ function M.get_items()
     end
     raw_items[v.key][v.fieldName] = v.value
     raw_items[v.key].itemType = v.typeName
+    if v.citationKey then
+      raw_items[v.key].citationKey = v.citationKey
+    end
     if v.attachment_path then
       raw_items[v.key].attachment.path = v.attachment_path
       raw_items[v.key].attachment.content_type = v.attachment_content_type

@@ -46,7 +46,20 @@ local get_bib_file = function()
 end
 
 local function insert_key_formatter(citekey)
-  return '\\autocite{' .. citekey .. '}'
+   return '\\autocite{' .. citekey .. '}'
+end
+
+local function write_to_bib(entry, bib_path, citekey)
+   local bib_entry = bib.entry_to_bib_entry(entry)
+   local file = io.open(bib_path, 'a')
+   if file == nil then
+     vim.notify('Could not open ' .. bib_path .. ' for appending', vim.log.levels.ERROR)
+     return false
+   end
+   file:write(bib_entry)
+   file:close()
+   vim.print('wrote ' .. citekey .. ' to ' .. bib_path)
+   return true
 end
 
 local default_opts = {
@@ -77,18 +90,18 @@ local get_items = function()
 end
 
 M.get_entry_from_citekey = function(citekey)
-  local return_entry = {}
-  for key, item in pairs(M.references) do
-    if item.citationKey == citekey then
-      return_entry["value"] = item
-    end
-  end
-  return return_entry
+   local return_entry = {}
+   for key, item in pairs(M.references) do
+     if item.citationKey and item.citationKey == citekey then
+       return_entry["value"] = item
+     end
+   end
+   return return_entry
 end
 
 M.get_citekeys_in_buffer = function()
   local buffer = vim.api.nvim_get_current_buf()
-  local filetype = vim.api.nvim_buf_get_option(buffer, "ft")
+  local filetype = vim.api.nvim_get_option_value("filetype", { buf = buffer })
   local lang = parsers.ft_to_lang(filetype)
   local reference_keys = {}
   if lang == 'latex' then
@@ -105,93 +118,85 @@ M.get_citekeys_in_buffer = function()
   return reference_keys
 end
 
+local function ensure_bib_file_and_get_lines(bib_path)
+   local ok, lines = pcall(io.lines, bib_path)
+   if not ok then
+     if vim.fn.confirm("Bibliography file missing. Create '" .. bib_path .. "'?", '&Yes\n&No', 1) == 1 then
+       vim.fn.writefile({}, bib_path)
+       ok, lines = pcall(io.lines, bib_path)
+       if not ok then
+         vim.notify('Could not read ' .. bib_path .. ' after creation', vim.log.levels.ERROR)
+         return nil
+       end
+     else
+       return nil
+     end
+   end
+   return lines
+end
+
 M.add_to_bib = function(entry, locate_bib_fn)
-  local citekey = entry.value.citekey
-  -- Get bib file path
-  local bib_path = nil
-  if type(locate_bib_fn) == 'string' then
-    bib_path = locate_bib_fn
-  elseif type(locate_bib_fn) == 'function' then
-    bib_path = locate_bib_fn()
-  end
-  if bib_path == nil then
-    vim.notify_once('Could not find a bibliography file', vim.log.levels.WARN)
-    return
-  end
-  bib_path = vim.fn.expand(bib_path)
+   local citekey = entry.value.citekey
+   -- Get bib file path
+   local bib_path = nil
+   if type(locate_bib_fn) == 'string' then
+     bib_path = locate_bib_fn
+   elseif type(locate_bib_fn) == 'function' then
+     bib_path = locate_bib_fn()
+   end
+   if bib_path == nil then
+     vim.notify_once('Could not find a bibliography file', vim.log.levels.WARN)
+     return
+   end
+   bib_path = vim.fn.expand(bib_path)
 
-  -- Check if bib file exists at bib_path
-  local ok, lines = pcall(io.lines, bib_path)
-  if not ok then
-    if vim.fn.confirm("Bibliography file missing. Create '" .. bib_path .. "'?", '&Yes\n&No', 1) == 1 then
-      vim.fn.writefile({}, bib_path)
-      lines = io.lines(bib_path)
-    end
-  end
+   local lines = ensure_bib_file_and_get_lines(bib_path)
+   if lines == nil then
+     return
+   end
 
-  -- Check if citation has already been placed in bib file at bib_path
-  for line in lines do
-    if string.match(line, '^@') and string.match(line, citekey) then
-      return
-    end
-  end
--- Otherwise, append the entry to the bib file at bib_path
-  local bib_entry = bib.entry_to_bib_entry(entry)
-  local file = io.open(bib_path, 'a')
-  if file == nil then
-    vim.notify('Could not open ' .. bib_path .. ' for appending', vim.log.levels.ERROR)
-    return
-  end
-  file:write(bib_entry)
-  file:close()
-  vim.print('wrote ' .. citekey .. ' to ' .. bib_path)
+   -- Check if citation has already been placed in bib file at bib_path
+   for line in lines do
+     if string.match(line, '^@') and string.match(line, citekey) then
+       return
+     end
+   end
+
+   write_to_bib(entry, bib_path, citekey)
 end
 
 local insert_entry = function(entry, insert_key_fn, locate_bib_fn)
-  -- Insert selected citation in file
-  local citekey = entry.value.citationKey
-  local insert_key = insert_key_fn(citekey)
-  vim.api.nvim_put({ insert_key }, '', false, true)
+   -- Insert selected citation in file
+   local citekey = entry.value.citationKey
+   local insert_key = insert_key_fn(citekey)
+   vim.api.nvim_put({ insert_key }, '', false, true)
 
-  -- Get bib file path
-  local bib_path = nil
-  if type(locate_bib_fn) == 'string' then
-    bib_path = locate_bib_fn
-  elseif type(locate_bib_fn) == 'function' then
-    bib_path = locate_bib_fn()
-  end
-  if bib_path == nil then
-    vim.notify_once('Could not find a bibliography file', vim.log.levels.WARN)
-    return
-  end
-  bib_path = vim.fn.expand(bib_path)
+   -- Get bib file path
+   local bib_path = nil
+   if type(locate_bib_fn) == 'string' then
+     bib_path = locate_bib_fn
+   elseif type(locate_bib_fn) == 'function' then
+     bib_path = locate_bib_fn()
+   end
+   if bib_path == nil then
+     vim.notify_once('Could not find a bibliography file', vim.log.levels.WARN)
+     return
+   end
+   bib_path = vim.fn.expand(bib_path)
 
-  -- Check if bib file exists at bib_path
-  local ok, lines = pcall(io.lines, bib_path)
-  if not ok then
-    if vim.fn.confirm("Bibliography file missing. Create '" .. bib_path .. "'?", '&Yes\n&No', 1) == 1 then
-      vim.fn.writefile({}, bib_path)
-      lines = io.lines(bib_path)
-    end
-  end
+   local lines = ensure_bib_file_and_get_lines(bib_path)
+   if lines == nil then
+     return
+   end
 
-  -- Check if citation has already been placed in bib file at bib_path
-  for line in lines do
-    if string.match(line, '^@') and string.match(line, citekey) then
-      return
-    end
-  end
+   -- Check if citation has already been placed in bib file at bib_path
+   for line in lines do
+     if string.match(line, '^@') and string.match(line, citekey) then
+       return
+     end
+   end
 
-  -- Otherwise, append the entry to the bib file at bib_path
-  local bib_entry = bib.entry_to_bib_entry(entry)
-  local file = io.open(bib_path, 'a')
-  if file == nil then
-    vim.notify('Could not open ' .. bib_path .. ' for appending', vim.log.levels.ERROR)
-    return
-  end
-  file:write(bib_entry)
-  file:close()
-  vim.print('wrote ' .. citekey .. ' to ' .. bib_path)
+   write_to_bib(entry, bib_path, citekey)
 end
 
 M.update_bibliography = function()
@@ -230,6 +235,7 @@ local function open_url(url, file_type)
     -- Use the custom PDF opener if specified
     vim.notify('Opening PDF with: ' .. M.config.pdf_opener .. ' ' .. vim.fn.shellescape(url), vim.log.levels.INFO)
     vim.fn.jobstart({ M.config.pdf_opener, url }, { detach = true })
+    return
   elseif vim.fn.has 'win32' == 1 then
     open_cmd = 'start'
   elseif vim.fn.has 'macunix' == 1 then
