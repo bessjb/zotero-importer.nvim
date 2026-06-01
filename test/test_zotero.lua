@@ -1,7 +1,9 @@
-package.path = package.path .. ";../lua/?/init.lua"
+local home = os.getenv("HOME")
+package.path = package.path .. ";../lua/?/init.lua;../lua/?.lua"
 package.path = package.path .. ";../lua/zotero-importer/?.lua"
-package.path = package.path .. ";~/.local/share/nvim/sqlite/lua/?/init.lua"
-package.path = package.path .. ";~/.local/share/nvim/nvim-treesitter/lua/?/init.lua"
+package.path = package.path .. ";./?/init.lua;./?.lua"
+package.path = package.path .. ";" .. home .. "/.local/share/nvim/lazy/sqlite.lua/lua/?/init.lua;" .. home .. "/.local/share/nvim/lazy/sqlite.lua/lua/?.lua"
+package.path = package.path .. ";" .. home .. "/.local/share/nvim/nvim-treesitter/lua/?/init.lua"
 
 -- Try to load luaunit, provide minimal fallback if not available
 local luaunit
@@ -9,12 +11,79 @@ local ok, result = pcall(function() return require('luaunit') end)
 if ok then
   luaunit = result
 else
-  -- Minimal luaunit fallback
+  -- Minimal luaunit fallback with basic test runner
+  local test_failures = {}
+  
   luaunit = {
-    assertEquals = function(a, b) assert(a == b, "Expected " .. tostring(b) .. " but got " .. tostring(a)) end,
-    assertIsNil = function(v) assert(v == nil, "Expected nil but got " .. tostring(v)) end,
+    assertEquals = function(a, b, msg) 
+      if a ~= b then 
+        local err = "Expected " .. tostring(b) .. " but got " .. tostring(a)
+        if msg then err = err .. " - " .. msg end
+        table.insert(test_failures, err)
+        error(err)
+      end 
+    end,
+    assertIsNil = function(v, msg) 
+      if v ~= nil then 
+        local err = "Expected nil but got " .. tostring(v)
+        if msg then err = err .. " - " .. msg end
+        table.insert(test_failures, err)
+        error(err)
+      end 
+    end,
+    assertIsNotNil = function(v, msg) 
+      if v == nil then 
+        local err = "Expected non-nil value"
+        if msg then err = err .. " - " .. msg end
+        table.insert(test_failures, err)
+        error(err)
+      end 
+    end,
     LuaUnit = {
-      run = function() return 0 end
+      run = function()
+        local test_classes = {}
+        for name, obj in pairs(_G) do
+          if string.match(name, '^Test') and type(obj) == 'table' then
+            table.insert(test_classes, {name = name, tests = obj})
+          end
+        end
+        
+        local total_tests = 0
+        local passed_tests = 0
+        local failed_tests = {}
+        
+        for _, test_class in ipairs(test_classes) do
+          for method_name, method in pairs(test_class.tests) do
+            if string.match(method_name, '^test') and type(method) == 'function' then
+              total_tests = total_tests + 1
+              local instance = {}
+              setmetatable(instance, {__index = test_class.tests})
+              
+              local ok, err = pcall(method, instance)
+              if ok then
+                passed_tests = passed_tests + 1
+                print("✓ " .. test_class.name .. ":" .. method_name)
+              else
+                table.insert(failed_tests, {
+                  test = test_class.name .. ":" .. method_name,
+                  error = err
+                })
+                print("✗ " .. test_class.name .. ":" .. method_name)
+              end
+            end
+          end
+        end
+        
+        print("\n" .. passed_tests .. "/" .. total_tests .. " tests passed")
+        if #failed_tests > 0 then
+          print("\nFailed tests:")
+          for _, failed in ipairs(failed_tests) do
+            print("  - " .. failed.test .. ": " .. failed.error)
+          end
+          return 1
+        end
+        return 0
+      end
     }
   }
 end
@@ -55,11 +124,39 @@ end
 TestMath = {}
 
 function TestMath:testAdd()
+    print("Running TestMath:testAdd")
     luaunit.assertEquals(1 + 2, 3)
 end
 
 function TestMath:testNilValue()
+    print("Running TestMath:testNilValue")
     luaunit.assertIsNil(nil)
 end
 
+TestBibFormat = {}
+
+function TestBibFormat:testBibEntryFormatting()
+  print("Running TestBibFormat:testBibEntryFormatting")
+  -- Test basic bibliography entry formatting
+  local bib = require('zotero-importer.bib')
+  local entry = {
+    value = {
+      citationKey = 'Smith2024',
+      title = 'Test Article',
+      creators = {
+        { firstName = 'John', lastName = 'Smith', creatorType = 'author' }
+      },
+      year = '2024',
+      itemType = 'journalArticle'
+    }
+  }
+  local result = bib.entry_to_bib_entry(entry)
+  luaunit.assertIsNotNil(result)
+  -- Check that result contains expected content (simplified check)
+  local has_at_sign = string.find(result, '@') ~= nil
+  luaunit.assertEquals(has_at_sign, true)
+  print("  ✓ BibFormat test passed")
+end
+
+print("Starting tests...")
 os.exit(luaunit.LuaUnit.run())
