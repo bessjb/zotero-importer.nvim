@@ -247,12 +247,10 @@ local function open_in_zotero(item_key)
 end
 
 local function extract_year(date)
-  local year = date:match '(%d%d%d%d)'
-  if year ~= nil then
-    return year
-  else
-    return 'NA'
+  if type(date) ~= 'string' then
+    return nil
   end
+  return date:match('(%d%d%d%d)')
 end
 
 local function make_entry(pre_entry)
@@ -260,7 +258,7 @@ local function make_entry(pre_entry)
   local author = creators[1] or {}
   local last_name = author.lastName or 'NA'
   local year = pre_entry.year or pre_entry.date or 'NA'
-  -- year = extract_year(year)
+  year = extract_year(year) or 'NA'
   pre_entry.year = year
 
   local options = get_attachment_options(pre_entry)
