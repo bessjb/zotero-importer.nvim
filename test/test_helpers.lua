@@ -80,6 +80,14 @@ function M.setup_luaunit()
         error(err)
       end 
     end,
+    assertNotNil = function(v, msg)
+      if v == nil then
+        local err = "Expected non-nil value"
+        if msg then err = err .. " - " .. msg end
+        table.insert(test_failures, err)
+        error(err)
+      end
+    end,
     LuaUnit = {
       run = function()
         local test_classes = {}

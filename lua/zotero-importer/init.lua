@@ -7,7 +7,6 @@ local action_state = require 'telescope.actions.state'
 local actions = require 'telescope.actions'
 local database = require 'zotero-importer.database'
 local bib = require 'zotero-importer.bib'
-local parsers = require("nvim-treesitter.parsers")
 -- local zotero_extension = require('telescope._extensions.zotero')
 
 local M = {}
@@ -102,7 +101,10 @@ end
 M.get_citekeys_in_buffer = function()
   local buffer = vim.api.nvim_get_current_buf()
   local filetype = vim.api.nvim_get_option_value("filetype", { buf = buffer })
-  local lang = parsers.ft_to_lang(filetype)
+  local lang = vim.treesitter.language.get_lang(filetype) or filetype
+  if filetype == 'tex' or filetype == 'plaintex' then
+    lang = 'latex'
+  end
   local reference_keys = {}
   if lang == 'latex' then
     local query = vim.treesitter.query.parse(lang, [[
@@ -393,10 +395,10 @@ M.picker = function(opts)
 end
 
 M.setup = function(opts)
+   vim.g.mapleader = ' '
    M.config = vim.tbl_extend('force', default_opts, opts or {})
    vim.keymap.set('n', '<leader>zo', M.picker, {})
    vim.keymap.set("n", "<Leader>zb", M.update_bibliography, {})
 end
 
 return M
-

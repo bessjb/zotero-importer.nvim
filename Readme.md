@@ -4,6 +4,27 @@ Extending functionality from https://github.com/jmbuhr/telescope-zotero.nvim
 
 ## Testing
 
+### Docker
+
+Docker runs both the standalone Lua tests and the headless Neovim/SQLite
+integration tests:
+
+```bash
+make test
+```
+
+To create the demo database and open the plugin in an interactive Neovim
+session:
+
+```bash
+make nvim
+```
+
+The repository is copied into a temporary workspace for the interactive
+session, so edits to the sample text and demo database are discarded when
+Neovim exits. Local plugin changes are still available without rebuilding the
+image. Use `make shell` to open a shell in the test container.
+
 ### Unit Tests
 
 Run unit tests with basic Lua:

@@ -185,6 +185,21 @@ rm /tmp/test_zotero*.sqlite
 
 ## CI/CD Integration
 
+The Docker workflow is exposed through the Makefile:
+
+```bash
+make build
+make unit
+make integration
+make test
+make demo-db
+make nvim
+```
+
+`make nvim` creates `.tmp/test_zotero_demo.sqlite` and opens the sample
+LaTeX document in an interactive Neovim container. The generated `.tmp`
+directory is ignored by Git.
+
 To run tests in CI/CD pipelines:
 
 ```bash
