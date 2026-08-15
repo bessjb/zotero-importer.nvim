@@ -103,13 +103,6 @@ local function create_schema(db_path)
     );
   ]])
   
-  -- Citation keys (from Better BibTeX)
-  exec_sql(db_path, [[
-    CREATE TABLE IF NOT EXISTS citationkey (
-      itemID INTEGER PRIMARY KEY,
-      citationKey TEXT NOT NULL UNIQUE
-    );
-  ]])
 end
 
 local function insert_test_data(db_path)
@@ -125,6 +118,7 @@ local function insert_test_data(db_path)
   exec_sql(db_path, "INSERT INTO fields (fieldID, fieldName) VALUES (5, 'DOI');")
   exec_sql(db_path, "INSERT INTO fields (fieldID, fieldName) VALUES (6, 'date');")
   exec_sql(db_path, "INSERT INTO fields (fieldID, fieldName) VALUES (7, 'publisher');")
+  exec_sql(db_path, "INSERT INTO fields (fieldID, fieldName) VALUES (8, 'citationKey');")
   
   -- Insert creator types
   exec_sql(db_path, "INSERT INTO creatorTypes (creatorTypeID, creatorType) VALUES (1, 'author');")
@@ -149,8 +143,9 @@ local function insert_test_data(db_path)
   exec_sql(db_path, "INSERT INTO creators (creatorID, firstName, lastName, fieldMode) VALUES (1, 'John', 'Smith', 0);")
   exec_sql(db_path, "INSERT INTO itemCreators (itemID, creatorID, creatorTypeID, orderIndex) VALUES (1, 1, 1, 0);")
   
-  -- Insert citation key for first item
-  exec_sql(db_path, "INSERT INTO citationkey (itemID, citationKey) VALUES (1, 'Smith2024');")
+  -- Insert native Zotero citation key for first item
+  exec_sql(db_path, "INSERT INTO itemDataValues (valueID, value) VALUES (8, 'Smith2024');")
+  exec_sql(db_path, "INSERT INTO itemData (itemID, fieldID, valueID) VALUES (1, 8, 8);")
   
   -- Insert second test item (book)
   exec_sql(db_path, "INSERT INTO items (itemID, itemTypeID, dateAdded, dateModified, key) VALUES (2, 2, '2024-01-02', '2024-01-02', 'ITEM2K');")
@@ -171,8 +166,9 @@ local function insert_test_data(db_path)
   exec_sql(db_path, "INSERT INTO itemCreators (itemID, creatorID, creatorTypeID, orderIndex) VALUES (2, 2, 1, 0);")
   exec_sql(db_path, "INSERT INTO itemCreators (itemID, creatorID, creatorTypeID, orderIndex) VALUES (2, 3, 1, 1);")
   
-  -- Insert citation key for second item
-  exec_sql(db_path, "INSERT INTO citationkey (itemID, citationKey) VALUES (2, 'Doe2023');")
+  -- Insert native Zotero citation key for second item
+  exec_sql(db_path, "INSERT INTO itemDataValues (valueID, value) VALUES (9, 'Doe2023');")
+  exec_sql(db_path, "INSERT INTO itemData (itemID, fieldID, valueID) VALUES (2, 8, 9);")
 end
 
 function M.setup_test_db(db_path)

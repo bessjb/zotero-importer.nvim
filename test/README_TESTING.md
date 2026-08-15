@@ -70,7 +70,7 @@ The integration tests create a temporary SQLite database at `/tmp/test_zotero_in
 - `creatorTypes` - Types of creators (author, contributor, etc.)
 - `itemCreators` - Mapping between items and creators
 - `itemAttachments` - PDF attachments and metadata
-- `citationkey` - BibTeX citation keys (from Better BibTeX)
+- `fields`, `itemData`, `itemDataValues` - native Zotero citation keys
 
 **Test Data**:
 1. Journal Article (ITEM1K)

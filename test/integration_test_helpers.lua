@@ -67,10 +67,6 @@ local function create_schema(db_path)
       charset TEXT,
       linkMode INTEGER
     );
-    CREATE TABLE citationkey (
-      itemID INTEGER PRIMARY KEY,
-      citationKey TEXT NOT NULL UNIQUE
-    );
   ]]
   
   exec_sql(db_path, schema_sql)
@@ -86,6 +82,7 @@ local function insert_test_data(db_path)
     "INSERT INTO fields (fieldID, fieldName) VALUES (3, 'year');",
     "INSERT INTO fields (fieldID, fieldName) VALUES (4, 'journal');",
     "INSERT INTO fields (fieldID, fieldName) VALUES (5, 'DOI');",
+     "INSERT INTO fields (fieldID, fieldName) VALUES (6, 'citationKey');",
     "INSERT INTO creatorTypes (creatorTypeID, creatorType) VALUES (1, 'author');",
     "INSERT INTO items (itemID, itemTypeID, dateAdded, dateModified, key) VALUES (1, 1, '2024-01-01', '2024-01-01', 'ITEM1K');",
     "INSERT INTO itemDataValues (valueID, value) VALUES (1, 'A Novel Framework for Research');",
@@ -98,7 +95,8 @@ local function insert_test_data(db_path)
     "INSERT INTO itemData (itemID, fieldID, valueID) VALUES (1, 5, 4);",
     "INSERT INTO creators (creatorID, firstName, lastName, fieldMode) VALUES (1, 'John', 'Smith', 0);",
     "INSERT INTO itemCreators (itemID, creatorID, creatorTypeID, orderIndex) VALUES (1, 1, 1, 0);",
-    "INSERT INTO citationkey (itemID, citationKey) VALUES (1, 'Smith2024');",
+    "INSERT INTO itemDataValues (valueID, value) VALUES (5, 'Smith2024');",
+    "INSERT INTO itemData (itemID, fieldID, valueID) VALUES (1, 6, 5);",
   }
   
   for _, sql in ipairs(test_data) do

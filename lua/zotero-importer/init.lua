@@ -98,6 +98,13 @@ M.get_entry_from_citekey = function(citekey)
    return return_entry
 end
 
+local function require_latex_parser()
+  local ok, err = pcall(vim.treesitter.get_parser, 0, 'latex')
+  if not ok then
+    error('[zotero] the LaTeX Tree-sitter parser is required. Install nvim-treesitter and run :TSInstall latex.\n' .. err)
+  end
+end
+
 M.get_citekeys_in_buffer = function()
   local buffer = vim.api.nvim_get_current_buf()
   local filetype = vim.api.nvim_get_option_value("filetype", { buf = buffer })
@@ -107,14 +114,14 @@ M.get_citekeys_in_buffer = function()
   end
   local reference_keys = {}
   if lang == 'latex' then
+    require_latex_parser()
     local query = vim.treesitter.query.parse(lang, [[
       ; query
       (citation (curly_group_text_list (text) @citation))
     ]])
     local tree = vim.treesitter.get_parser():parse()[1]
-    for id, node, metadata in query:iter_captures(tree:root(), buffer) do
-       -- Print the node name and source text.
-       table.insert(reference_keys, vim.treesitter.get_node_text(node, buffer))
+    for _, node in query:iter_captures(tree:root(), buffer) do
+      table.insert(reference_keys, vim.treesitter.get_node_text(node, buffer))
     end
   end
   return reference_keys
@@ -138,7 +145,7 @@ local function ensure_bib_file_and_get_lines(bib_path)
 end
 
 M.add_to_bib = function(entry, locate_bib_fn)
-   local citekey = entry.value.citekey
+   local citekey = entry.value.citationKey
    -- Get bib file path
    local bib_path = nil
    if type(locate_bib_fn) == 'string' then

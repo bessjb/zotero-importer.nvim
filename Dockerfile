@@ -28,6 +28,7 @@ RUN git clone --depth 1 --branch 0.1.8 \
   && git clone --depth 1 \
       https://github.com/neovim/nvim-lspconfig /opt/nvim-lspconfig
 
+
 COPY docker/nvim/init.lua /opt/zotero-nvim-init.lua
 
 WORKDIR /plugin

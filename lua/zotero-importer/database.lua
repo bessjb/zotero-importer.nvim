@@ -21,13 +21,6 @@ M.connect = function(opts)
   return true
 end
 
-local query_bbt = [[
-  SELECT
-    itemKey, citationKey
-  FROM
-    citationkey
-]]
-
 local query_items = [[
     SELECT
       DISTINCT items.key, items.itemID,
@@ -39,7 +32,7 @@ local query_items = [[
       itemAttachments.linkMode AS attachment_link_mode,
       -- Fetch the folder name from the itemAttachments table
       SUBSTR(itemAttachments.path, INSTR(itemAttachments.path, ':') + 1) AS folder_name,
-      citationkey.citationKey AS citationKey
+      citationKeyValues.value AS citationKey
     FROM
       items
       INNER JOIN itemData ON itemData.itemID = items.itemID
@@ -49,7 +42,9 @@ local query_items = [[
       INNER JOIN fields ON fields.fieldID = parentItemData.fieldID
       INNER JOIN itemTypes ON itemTypes.itemTypeID = items.itemTypeID
       LEFT JOIN itemAttachments ON items.itemID = itemAttachments.parentItemID AND itemAttachments.contentType = 'application/pdf'
-      LEFT JOIN citationkey ON items.itemID = citationkey.itemID
+      LEFT JOIN fields AS citationKeyField ON citationKeyField.fieldName = 'citationKey'
+      LEFT JOIN itemData AS citationKeyData ON citationKeyData.itemID = items.itemID AND citationKeyData.fieldID = citationKeyField.fieldID
+      LEFT JOIN itemDataValues AS citationKeyValues ON citationKeyValues.valueID = citationKeyData.valueID
 ]]
 local query_creators = [[
     SELECT

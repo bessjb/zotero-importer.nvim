@@ -2,6 +2,14 @@ WIP plugin for adding all references in a tex document to a bibliography
 
 Extending functionality from https://github.com/jmbuhr/telescope-zotero.nvim
 
+## Dependencies
+
+The plugin requires `nvim-treesitter` with the LaTeX parser installed:
+
+```vim
+:TSInstall latex
+```
+
 ## Testing
 
 ### Docker
@@ -48,7 +56,7 @@ Integration tests verify the database connectivity and data retrieval. Run these
 
 Integration tests use a minimal SQLite database created at `/tmp/test_zotero_integration.sqlite`. The database includes:
 
-- **tables**: items, itemTypes, fields, itemDataValues, itemData, creators, creatorTypes, itemCreators, itemAttachments, citationkey
+- **tables**: items, itemTypes, fields, itemDataValues, itemData, creators, creatorTypes, itemCreators, itemAttachments
 - **test data**: 2 sample bibliography items (1 journal article, 1 book) with creators and metadata
 
 The test database is automatically created and destroyed for each test run. No external Zotero installation is required.
